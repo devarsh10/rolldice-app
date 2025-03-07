@@ -1,0 +1,67 @@
+version: "3"
+services:
+  rolldice-app:
+    build: .
+    container_name: rolldice-app
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+    depends_on:
+      - tempo
+      # - jaeger
+      - otel-collector
+    # I don't think adding this to the rolldice-app-network is necessary
+
+  # jaeger:
+  #   image: jaegertracing/all-in-one:latest
+  #   container_name: jaeger
+  #   environment:
+  #     - COLLECTOR_ZIPKIN_HOST_PORT=:9411
+  #   ports:
+  #     - "16686:16686"
+  #     - "9411:9411"
+  #   networks:
+  #     - rolldice-app-network
+
+  tempo:
+    container_name: tempo
+    image: grafana/tempo:latest
+    command: [--config.file=/etc/tempo/tempo.yaml]
+    volumes:
+      - ./tempo.yaml:/etc/tempo/tempo.yaml
+      - ./tempo-data:/tmp/tempo/traces
+    ports:
+      - "3200:3200"
+    networks:
+      - rolldice-app-network
+  
+  otel-collector:
+    container_name: otel-collector
+    image: otel/opentelemetry-collector
+    command: [--config=/etc/otel-collector-config.yaml]
+    volumes:
+      - ./collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "4318:4318"
+    networks:
+      - rolldice-app-network
+    depends_on:
+      - tempo
+      # - jaeger # (if using)
+
+  grafana:
+    container_name: grafana
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    networks:
+      - rolldice-app-network
+    depends_on:
+      - tempo
+  
+networks:
+  rolldice-app-network:
+    name: rolldice-app-network
