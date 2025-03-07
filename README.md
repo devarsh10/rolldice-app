@@ -36,9 +36,11 @@ node --require ./instrumentation.js app.js
 
 Final results,
 1. Jaeger UI
+![Screenshot 2025-03-07 111412](https://github.com/user-attachments/assets/68d49dac-c214-44d8-96b5-b3268b63c7ad)
 
 
 2. Open Telemetery collector logs
+![Screenshot 2025-03-07 111540](https://github.com/user-attachments/assets/58080473-bddb-40fe-934a-245325b1ff84)
 
 
 Things yet to be done
