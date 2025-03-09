@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 8080
 
 # Start the app
-CMD ["node", "app.js"]
+CMD ["node", "--require", "./instrumentation.js", "app.js"]
