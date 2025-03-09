@@ -32,10 +32,10 @@ services:
   tempo:
     container_name: tempo
     image: grafana/tempo:latest
-    command: [--config.file=/etc/tempo/tempo.yaml]
+    command: [--config.file=/etc/tempo.yaml]
     volumes:
-      - ./tempo.yaml:/etc/tempo/tempo.yaml
-      - ./tempo-data:/tmp/tempo/traces
+      - ./tempo.yaml:/etc/tempo.yaml
+      - ./tempo-data:/var/tempo
     ports:
       - "3200:3200"
     networks:
@@ -55,18 +55,39 @@ services:
       - tempo
       # - jaeger # (if using)
 
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus:latest
+    command:
+      - --config.file=/etc/prometheus.yaml
+      - --web.enable-remote-write-receiver
+      - --enable-feature=exemplar-storage
+      - --enable-feature=native-histograms
+    volumes:
+      - ./shared/prometheus.yaml:/etc/prometheus.yaml
+    ports:
+      - "9090:9090"
+    networks:
+      - rolldice-app-network
+
   grafana:
     container_name: grafana
-    image: grafana/grafana:latest
+    image: grafana/grafana:11.2.0
+    volumes:
+      - ./shared/grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
     ports:
       - "3000:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+      - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor metricsSummary
+      - GF_INSTALL_PLUGINS=https://storage.googleapis.com/integration-artifacts/grafana-exploretraces-app/grafana-exploretraces-app-latest.zip;grafana-traces-app
     networks:
       - rolldice-app-network
     depends_on:
       - tempo
-  
+    
 networks:
   rolldice-app-network:
     name: rolldice-app-network
